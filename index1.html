@@ -202,6 +202,13 @@
       color: white;
     }
 
+    .btn-input {
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: white;
+      font-size: 1rem;
+      padding: 12px 24px;
+    }
+
     /* Advanced dashboard cards */
     .dashboard-card {
       background: rgba(255, 255, 255, 0.05);
@@ -343,6 +350,39 @@
       100% { transform: scale(0.8); opacity: 0.5; }
     }
 
+    /* Input form styles */
+    .input-form {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 2rem;
+      max-width: 400px;
+      margin: 2rem auto;
+    }
+
+    .input-field {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      padding: 12px 16px;
+      color: white;
+      width: 100%;
+      margin-bottom: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: #10b981;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .input-field::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
     /* Responsive improvements */
     @media (max-width: 768px) {
       .modern-btn {
@@ -353,6 +393,11 @@
       .glassmorphism-sidebar {
         width: 90vw !important;
         max-width: none !important;
+      }
+
+      .input-form {
+        margin: 1rem;
+        padding: 1.5rem;
       }
     }
 
@@ -385,6 +430,7 @@
     <nav class="space-x-2">
       <button id="homeBtn" class="nav-btn text-gray-300 hover:text-white font-medium">🏠 Home</button>
       <button id="liveMapBtn" class="nav-btn text-gray-300 hover:text-green-400 font-medium">🌍 Live Map</button>
+      <button id="testBtn" class="nav-btn text-gray-300 hover:text-purple-400 font-medium">🧪 Test Model</button>
       <button id="alertsBtn" class="nav-btn text-gray-300 hover:text-yellow-400 font-medium">⚠️ Alerts</button>
     </nav>
   </header>
@@ -414,6 +460,9 @@
           <button id="landingLiveMapBtn" class="modern-btn btn-primary">
             🌍 Explore Live Risk Map
           </button>
+          <button id="landingTestBtn" class="modern-btn btn-input">
+            🧪 Test AI Model
+          </button>
           <button id="landingAlertsBtn" class="modern-btn btn-secondary">
             ⚠️ View Alerts & Guidance
           </button>
@@ -442,9 +491,59 @@
       <div class="absolute top-4 right-4 p-6 w-80 sm:w-96 z-10 glassmorphism-sidebar">
         <div class="flex items-center justify-between mb-6">
           <h3 class="text-2xl font-bold">🌊 Risk Overview</h3>
-          <div class="pulse-loader"></div>
+          <div class="pulse-loader" style="display: none;"></div>
         </div>
-        <div id="riskCards" class="space-y-4 max-h-[calc(100vh-180px)] overflow-y-auto"></div>
+        <div class="mb-4">
+          <select id="citySelector" class="input-field text-sm">
+            <option value="Bengaluru">Bengaluru, India</option>
+            <option value="Mumbai">Mumbai, India</option>
+            <option value="Chennai">Chennai, India</option>
+            <option value="Delhi">Delhi, India</option>
+            <option value="Kolkata">Kolkata, India</option>
+          </select>
+          <button id="refreshBtn" class="modern-btn btn-primary mt-2 w-full text-sm py-2">🔄 Refresh Data</button>
+        </div>
+        <div id="riskCards" class="space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto"></div>
+      </div>
+    </div>
+
+    <!-- Test Model Page -->
+    <div id="testPage" class="page-transition hidden absolute inset-0 overflow-y-auto p-8" style="background: linear-gradient(135deg, #0a0f1c 0%, #1e293b 100%);">
+      <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-12">
+          <h2 class="text-5xl font-black mb-4 bg-gradient-to-r from-white via-purple-300 to-blue-300 bg-clip-text text-transparent">
+            🧪 Test AI Model
+          </h2>
+          <div class="w-32 h-1 bg-gradient-to-r from-purple-400 to-blue-500 mx-auto rounded-full"></div>
+          <p class="text-lg text-gray-300 mt-4">Enter weather parameters to test flood prediction</p>
+        </div>
+        
+        <div class="input-form">
+          <h3 class="text-2xl font-bold mb-6 text-center text-white">Weather Parameters</h3>
+          <div id="testError" class="hidden mb-4 p-4 bg-red-900/20 border border-red-500/30 rounded-lg text-red-200"></div>
+          <div id="testResult" class="hidden mb-4 p-4 rounded-lg"></div>
+          
+          <form id="testForm">
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-300 mb-2">Temperature (°C)</label>
+              <input type="number" step="0.1" id="temperature" class="input-field" placeholder="e.g., 28.5" required>
+            </div>
+            
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-300 mb-2">Rainfall (mm/hour)</label>
+              <input type="number" step="0.1" id="rainfall" class="input-field" placeholder="e.g., 15.2" required>
+            </div>
+            
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-gray-300 mb-2">Humidity (%)</label>
+              <input type="number" step="0.1" id="humidity" class="input-field" placeholder="e.g., 75.5" required>
+            </div>
+            
+            <button type="submit" id="testSubmit" class="modern-btn btn-input w-full">
+              🔮 Predict Flood Risk
+            </button>
+          </form>
+        </div>
       </div>
     </div>
 
@@ -468,24 +567,38 @@
 document.addEventListener('DOMContentLoaded', () => {
   const landingPage = document.getElementById('landingPage');
   const liveMapPage = document.getElementById('liveMapPage');
+  const testPage = document.getElementById('testPage');
   const alertsPage = document.getElementById('alertsPage');
   const homeBtn = document.getElementById('homeBtn');
   const liveMapBtn = document.getElementById('liveMapBtn');
+  const testBtn = document.getElementById('testBtn');
   const alertsBtn = document.getElementById('alertsBtn');
   const landingLiveMapBtn = document.getElementById('landingLiveMapBtn');
+  const landingTestBtn = document.getElementById('landingTestBtn');
   const landingAlertsBtn = document.getElementById('landingAlertsBtn');
   const riskCardsContainer = document.getElementById('riskCards');
   const alertMessagesContainer = document.getElementById('alertMessages');
-  const pulseLoader = document.querySelector('.pulse-loader'); // Get the loader
+  const pulseLoader = document.querySelector('.pulse-loader');
+  const citySelector = document.getElementById('citySelector');
+  const refreshBtn = document.getElementById('refreshBtn');
   let map;
 
   // IMPORTANT: Set your backend API base URL
-  const API_BASE_URL = 'http://127.0.0.1:8000'; // Or wherever your FastAPI is running
+  const API_BASE_URL = 'http://127.0.0.1:8000'; // Make sure this matches your FastAPI server
+
+  // City coordinates for map centering
+  const cityCoordinates = {
+    'Bengaluru': [12.9716, 77.5946],
+    'Mumbai': [19.0760, 72.8777],
+    'Chennai': [13.0827, 80.2707],
+    'Delhi': [28.7041, 77.1025],
+    'Kolkata': [22.5726, 88.3639]
+  };
 
   const COLORS = { green:'#10b981', yellow:'#f59e0b', red:'#ef4444' };
 
   function showPage(pageId){
-    [landingPage, liveMapPage, alertsPage].forEach(p=>{
+    [landingPage, liveMapPage, testPage, alertsPage].forEach(p=>{
       p.classList.add("hidden");
       p.classList.remove("active");
     });
@@ -497,7 +610,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if(!map) initializeMap();
       setTimeout(()=>{
         map.invalidateSize();
-        fetchAndDisplayRiskData(); // Call this to fetch real data
+        fetchAndDisplayRiskData();
       },300);
     }
     if(pageId==='alertsPage'){ displayAlerts(); }
@@ -505,75 +618,98 @@ document.addEventListener('DOMContentLoaded', () => {
 
   homeBtn.onclick=()=>showPage('landingPage');
   liveMapBtn.onclick=()=>showPage('liveMapPage');
+  testBtn.onclick=()=>showPage('testPage');
   alertsBtn.onclick=()=>showPage('alertsPage');
   landingLiveMapBtn.onclick=()=>showPage('liveMapPage');
+  landingTestBtn.onclick=()=>showPage('testPage');
   landingAlertsBtn.onclick=()=>showPage('alertsPage');
 
   function initializeMap(){
     if(map) map.remove();
-    map=L.map('map').setView([12.9716, 77.5946], 12); // Centered on Bengaluru
+    const selectedCity = citySelector.value;
+    const coords = cityCoordinates[selectedCity] || cityCoordinates['Bengaluru'];
+    map=L.map('map').setView(coords, 11);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
       { attribution:'&copy; CartoDB &copy; OpenStreetMap', subdomains: 'abcd' }).addTo(map);
   }
 
-  // Removed dummyRiskData
+  function getRiskColor(prediction){
+    return prediction === 1 ? COLORS.red : COLORS.green;
+  }
 
-  function getRiskColor(s){return s>=70?COLORS.red:(s>=40?COLORS.yellow:COLORS.green);}
-  function getRiskText(s){return s>=70?'Critical':(s>=40?'Moderate':'Safe');}
+  function getRiskText(prediction){
+    return prediction === 1 ? 'High Risk' : 'Low Risk';
+  }
+
+  function getRiskScore(prediction){
+    return prediction === 1 ? 85 : 15;
+  }
+
   function getTrendIcon(trend){
     return trend==='rising'?'📈':(trend==='falling'?'📉':'➡️');
   }
 
   function displayRiskCards(data){
     riskCardsContainer.innerHTML='';
-    // Since we're fetching for one city, data will be a single object
-    const loc = data; // Assuming data is the single location object
     
-    // Fallback if data is not available or an error occurred
-    if (!loc || loc.error) {
-        riskCardsContainer.innerHTML = `<div class="p-4 text-red-400">Error: Could not load risk data for ${loc?.city || 'the selected city'}. ${loc?.error || ''}</div>`;
+    // Handle error cases
+    if (!data || data.error) {
+        riskCardsContainer.innerHTML = `<div class="p-4 text-red-400">Error: ${data?.error || 'Could not load risk data'}</div>`;
         return;
     }
 
-    const riskColor=getRiskColor(loc.riskScore);
-    const riskText=getRiskText(loc.riskScore);
-    const trendIcon=getTrendIcon(loc.trend); // 'trend' needs to be derived or sent by backend
+    // Extract data from the single city response
+    const weather = data.weather;
+    const prediction = data.prediction;
+    const city = data.city;
+    
+    // Calculate risk indicators
+    const riskScore = getRiskScore(prediction);
+    const riskColor = getRiskColor(prediction);
+    const riskText = getRiskText(prediction);
+    const trend = prediction === 1 ? 'rising' : 'stable';
+    const trendIcon = getTrendIcon(trend);
 
-    const card=document.createElement('div');
-    card.className=`dashboard-card p-5 ${loc.riskScore>=70?'glowing-red':''}`;
+    // Create single card for the city
+    const card = document.createElement('div');
+    card.className = `dashboard-card p-5 ${prediction === 1 ? 'glowing-red':''}`;
     card.style.borderLeftColor = riskColor;
-    card.dataset.id=loc.id; // Still good for potential future expansion
-    card.innerHTML=`
+    card.innerHTML = `
       <div class="flex justify-between items-start mb-3">
         <div>
-          <h4 class="font-bold text-white text-lg">${loc.name || loc.city}</h4>
+          <h4 class="font-bold text-white text-lg">${city}</h4>
           <div class="flex items-center mt-1 space-x-2">
             <span class="risk-badge" style="background: ${riskColor}20; color: ${riskColor}; border: 1px solid ${riskColor}40;">
               ${riskText}
             </span>
-            <span class="text-sm opacity-70">${trendIcon} ${loc.trend || 'stable'}</span>
+            <span class="text-sm opacity-70">${trendIcon} ${trend}</span>
           </div>
         </div>
       </div>
       <div class="space-y-2 text-sm text-gray-300">
         <div class="flex justify-between">
           <span>💧 Rainfall (1h):</span>
-          <span class="font-semibold text-blue-300">${loc.rainfall}mm</span>
+          <span class="font-semibold text-blue-300">${weather.rainfall.toFixed(1)}mm</span>
         </div>
         <div class="flex justify-between">
           <span>🌡️ Temperature:</span>
-          <span class="font-semibold text-orange-300">${loc.temperature}°C</span>
+          <span class="font-semibold text-orange-300">${weather.temperature.toFixed(1)}°C</span>
         </div>
          <div class="flex justify-between">
           <span>💧 Humidity:</span>
-          <span class="font-semibold text-cyan-300">${loc.humidity}%</span>
+          <span class="font-semibold text-cyan-300">${weather.humidity.toFixed(0)}%</span>
         </div>
         <div class="flex justify-between pt-2 border-t border-gray-600">
           <span>⚡ Flood Risk:</span>
-          <span class="font-bold text-lg" style="color:${riskColor}">${loc.prediction_text || loc.prediction}</span>
+          <span class="font-bold text-lg" style="color:${riskColor}">${riskText}</span>
+        </div>
+        <div class="text-xs opacity-60 pt-2">
+          Last updated: ${new Date().toLocaleTimeString()}
         </div>
       </div>
     `;
+    
+    // Add the single card to container
     riskCardsContainer.appendChild(card);
   }
 
@@ -583,99 +719,165 @@ document.addEventListener('DOMContentLoaded', () => {
       if(l instanceof L.CircleMarker||l instanceof L.Marker) map.removeLayer(l);
     });
 
-    const loc = data; // Single location
-    if (!loc || loc.error) return;
+    if (!data || data.error) return;
 
-    const riskColor=getRiskColor(loc.riskScore); // Need to define riskScore
-    const circle=L.circleMarker([loc.lat,loc.lng],{
+    const weather = data.weather;
+    const prediction = data.prediction;
+    const city = data.city;
+    const coords = cityCoordinates[city] || cityCoordinates['Bengaluru'];
+    
+    const riskColor = getRiskColor(prediction);
+    const riskText = getRiskText(prediction);
+    const riskScore = getRiskScore(prediction);
+    
+    const circle=L.circleMarker(coords,{
       color:'#ffffff',
       fillColor:riskColor,
       fillOpacity:0.8,
-      radius:12+(loc.riskScore/10), // Need to define riskScore
+      radius:12+(riskScore/10),
       weight:3,
-      className: loc.riskScore >= 70 ? 'glowing-marker' : '' // Need to define riskScore
+      className: prediction === 1 ? 'glowing-marker' : ''
     }).addTo(map);
     
     circle.bindPopup(`
       <div style="color: #333; font-family: Inter, sans-serif;">
         <h3 style="margin: 0 0 10px 0; color: ${riskColor}; font-weight: bold;">
-          ${loc.name || loc.city}
+          ${city}
         </h3>
         <div style="display: grid; gap: 5px;">
-          <div>💧 Rainfall (1h): <strong>${loc.rainfall}mm</strong></div>
-          <div>🌡️ Temperature: <strong>${loc.temperature}°C</strong></div>
-          <div>💧 Humidity: <strong>${loc.humidity}%</strong></div>
-          <div>⚡ Flood Risk: <strong style="color: ${riskColor}">${loc.prediction_text || loc.prediction}</strong></div>
-          <div>📊 Trend: ${getTrendIcon(loc.trend || 'stable')} ${loc.trend || 'stable'}</div>
+          <div>💧 Rainfall (1h): <strong>${weather.rainfall.toFixed(1)}mm</strong></div>
+          <div>🌡️ Temperature: <strong>${weather.temperature.toFixed(1)}°C</strong></div>
+          <div>💧 Humidity: <strong>${weather.humidity.toFixed(0)}%</strong></div>
+          <div>⚡ Flood Risk: <strong style="color: ${riskColor}">${riskText}</strong></div>
+          <div>📊 Model Score: ${prediction === 1 ? '1' : '0'} (${prediction === 1 ? 'Flood Expected' : 'No Flood'})</div>
         </div>
       </div>
     `);
     
-    // Fit map to the single marker
-    map.setView([loc.lat, loc.lng], 12);
+    // Center map on the city
+    map.setView(coords, 11);
   }
 
   async function fetchAndDisplayRiskData(){
-    pulseLoader.style.display = 'inline-block'; // Show loader
-    riskCardsContainer.innerHTML = `<div class="p-4 text-center text-gray-400">Fetching live data...</div>`;
-
-    const city = "Bengaluru"; // Default city for live prediction
-    const defaultLat = 12.9716; // Latitude for Bengaluru
-    const defaultLng = 77.5946; // Longitude for Bengaluru
+    const selectedCity = citySelector.value;
+    pulseLoader.style.display = 'inline-block';
+    riskCardsContainer.innerHTML = `<div class="p-4 text-center text-gray-400">Fetching live data for ${selectedCity}...</div>`;
 
     try {
-        const response = await fetch(`${API_BASE_URL}/predict-live?city=${city}`);
+        const response = await fetch(`${API_BASE_URL}/predict-live?city=${selectedCity}`);
         const data = await response.json();
 
-        if (response.ok) {
-            // Backend returns: {"city": "Bengaluru", "weather": {...}, "prediction": 0/1}
-            const weather = data.weather;
-            const predictionValue = data.prediction; // 0 or 1
-            
-            // Map prediction to a text and a pseudo-risk score for display
-            let riskScore;
-            let predictionText;
-            let trend = 'stable'; // We don't have trend from current backend, so default
-
-            if (predictionValue === 1) {
-                predictionText = "High Risk of Flood";
-                riskScore = 80; // Example score for high risk
-                trend = 'rising';
-            } else {
-                predictionText = "Low Risk of Flood";
-                riskScore = 20; // Example score for low risk
-            }
-
-            const processedData = {
-                id: city.toLowerCase().replace(/\s/g, '-'),
-                city: city,
-                name: city, // Use city name for display
-                lat: defaultLat, // Use default lat/lng for now
-                lng: defaultLng, // Use default lat/lng for now
-                rainfall: weather.rainfall,
-                temperature: weather.temperature,
-                humidity: weather.humidity,
-                prediction: predictionValue,
-                prediction_text: predictionText,
-                riskScore: riskScore,
-                trend: trend // Pass the derived trend
-            };
-
-            displayRiskCards(processedData);
-            addMarkersToMap(processedData);
+        if (response.ok && !data.error) {
+            displayRiskCards(data);
+            addMarkersToMap(data);
         } else {
-            riskCardsContainer.innerHTML = `<div class="p-4 text-red-400">Error fetching data: ${data.error || 'Unknown error'}</div>`;
+            riskCardsContainer.innerHTML = `<div class="p-4 text-red-400">Error: ${data.error || 'Failed to fetch data'}</div>`;
             console.error('Error fetching live data:', data);
         }
     } catch (error) {
-        riskCardsContainer.innerHTML = `<div class="p-4 text-red-400">Network error: ${error.message}. Is the backend running?</div>`;
+        riskCardsContainer.innerHTML = `<div class="p-4 text-red-400">Network error: ${error.message}<br><small>Make sure the backend server is running on ${API_BASE_URL}</small></div>`;
         console.error('Network or parsing error:', error);
     } finally {
-        pulseLoader.style.display = 'none'; // Hide loader
+        pulseLoader.style.display = 'none';
     }
   }
 
-  // --- Alerts remain unchanged ---
+  // Event listeners for city selector and refresh button
+  citySelector.addEventListener('change', () => {
+    if (map) {
+      const coords = cityCoordinates[citySelector.value] || cityCoordinates['Bengaluru'];
+      map.setView(coords, 11);
+      fetchAndDisplayRiskData();
+    }
+  });
+
+  refreshBtn.addEventListener('click', fetchAndDisplayRiskData);
+
+  // Test Model Form Handler
+  document.getElementById('testForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const submitBtn = document.getElementById('testSubmit');
+    const errorDiv = document.getElementById('testError');
+    const resultDiv = document.getElementById('testResult');
+    
+    // Get form values
+    const temperature = parseFloat(document.getElementById('temperature').value);
+    const rainfall = parseFloat(document.getElementById('rainfall').value);
+    const humidity = parseFloat(document.getElementById('humidity').value);
+    
+    // Hide previous results
+    errorDiv.classList.add('hidden');
+    resultDiv.classList.add('hidden');
+    
+    // Show loading state
+    submitBtn.innerHTML = '🔮 Processing...';
+    submitBtn.disabled = true;
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/predict`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          temperature: temperature,
+          rainfall: rainfall,
+          humidity: humidity
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && !data.error) {
+        const prediction = data.prediction;
+        const riskColor = getRiskColor(prediction);
+        const riskText = getRiskText(prediction);
+        
+        resultDiv.innerHTML = `
+          <div class="text-center">
+            <div class="text-4xl mb-4">${prediction === 1 ? '🌊' : '✅'}</div>
+            <h3 class="text-2xl font-bold mb-2" style="color: ${riskColor}">
+              ${riskText}
+            </h3>
+            <p class="text-gray-300 mb-4">
+              ${prediction === 1 
+                ? 'The AI model predicts a high probability of flooding based on the provided weather conditions.' 
+                : 'The AI model indicates low flood risk based on the provided weather conditions.'}
+            </p>
+            <div class="grid grid-cols-3 gap-4 text-sm">
+              <div class="text-center">
+                <div class="text-orange-300 font-bold">${temperature}°C</div>
+                <div class="text-gray-400">Temperature</div>
+              </div>
+              <div class="text-center">
+                <div class="text-blue-300 font-bold">${rainfall}mm</div>
+                <div class="text-gray-400">Rainfall/hr</div>
+              </div>
+              <div class="text-center">
+                <div class="text-cyan-300 font-bold">${humidity}%</div>
+                <div class="text-gray-400">Humidity</div>
+              </div>
+            </div>
+          </div>
+        `;
+        resultDiv.className = `p-6 rounded-lg mb-4 ${prediction === 1 
+          ? 'bg-red-900/20 border border-red-500/30' 
+          : 'bg-green-900/20 border border-green-500/30'}`;
+        resultDiv.classList.remove('hidden');
+      } else {
+        errorDiv.innerHTML = `Failed to get prediction: ${data.error || 'Unknown error'}`;
+        errorDiv.classList.remove('hidden');
+      }
+    } catch (error) {
+      errorDiv.innerHTML = `Network error: ${error.message}. Make sure the backend server is running.`;
+      errorDiv.classList.remove('hidden');
+    } finally {
+      submitBtn.innerHTML = '🔮 Predict Flood Risk';
+      submitBtn.disabled = false;
+    }
+  });
+
   function displayAlerts(){
     alertMessagesContainer.innerHTML='';
     const alerts=[
@@ -734,17 +936,17 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="p-4 rounded-lg bg-red-900/30 border border-red-500/30">
             <div class="text-2xl mb-2">🚨</div>
             <div class="font-bold">Emergency Services</div>
-            <div class="text-xl font-mono">911 / 112</div>
+            <div class="text-xl font-mono">112</div>
           </div>
           <div class="p-4 rounded-lg bg-blue-900/30 border border-blue-500/30">
             <div class="text-2xl mb-2">🌊</div>
-            <div class="font-bold">Flood Hotline</div>
-            <div class="text-xl font-mono">1-800-FLOODS</div>
+            <div class="font-bold">Disaster Management</div>
+            <div class="text-xl font-mono">1078</div>
           </div>
           <div class="p-4 rounded-lg bg-green-900/30 border border-green-500/30">
             <div class="text-2xl mb-2">ℹ️</div>
-            <div class="font-bold">Local Authorities</div>
-            <div class="text-xl font-mono">311</div>
+            <div class="font-bold">Weather Helpline</div>
+            <div class="text-xl font-mono">1588</div>
           </div>
         </div>
       </div>
