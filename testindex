@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PulseNet - AI Disaster Intelligence</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    
+    body { 
+      overflow-x: hidden; 
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0a0f1c;
+      color: #ffffff;
+    }
+    
+    #map { height: 100%; width: 100%; }
+
+    /* Animated background */
+    .animated-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: -1;
+    }
+
+    .floating-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(1px);
+      animation: float 20s infinite ease-in-out;
+    }
+
+    .orb1 {
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, rgba(16, 185, 129, 0) 70%);
+      top: 10%;
+      left: 10%;
+      animation-delay: 0s;
+    }
+
+    .orb2 {
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.4) 0%, rgba(59, 130, 246, 0) 70%);
+      top: 60%;
+      right: 15%;
+      animation-delay: -10s;
+    }
+
+    .orb3 {
+      width: 150px;
+      height: 150px;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.3) 0%, rgba(139, 92, 246, 0) 70%);
+      bottom: 20%;
+      left: 60%;
+      animation-delay: -5s;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) translateX(0px) scale(1); }
+      25% { transform: translateY(-30px) translateX(20px) scale(1.1); }
+      50% { transform: translateY(-60px) translateX(-20px) scale(0.9); }
+      75% { transform: translateY(-30px) translateX(10px) scale(1.05); }
+    }
+
+    /* Page transitions */
+    .page-transition {
+      opacity: 0;
+      transform: translateY(30px) scale(0.95);
+      transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .page-transition.active {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    /* Advanced glowing effects */
+    .glowing-red {
+      animation: pulse-red 2s infinite cubic-bezier(0.4,0,0.6,1);
+      position: relative;
+    }
+    
+    .glowing-red::before {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      background: linear-gradient(45deg, #dc2626, #ef4444, #dc2626);
+      border-radius: 12px;
+      z-index: -1;
+      filter: blur(8px);
+      opacity: 0.7;
+    }
+
+    @keyframes pulse-red {
+      0%,100% { 
+        box-shadow: 0 0 0 0 rgba(220,38,38,0.8), 
+                    0 0 20px rgba(220,38,38,0.4),
+                    inset 0 1px 0 rgba(255,255,255,0.2); 
+      }
+      50% { 
+        box-shadow: 0 0 0 20px rgba(220,38,38,0), 
+                    0 0 40px rgba(220,38,38,0.6),
+                    inset 0 1px 0 rgba(255,255,255,0.2); 
+      }
+    }
+
+    /* Modern glassmorphism header */
+    .glass-header {
+      background: rgba(10, 15, 28, 0.8);
+      backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Enhanced landing gradient */
+    .landing-gradient-bg {
+      background: linear-gradient(135deg, #0a0f1c 0%, #1e3a8a 35%, #10b981 100%);
+      position: relative;
+    }
+
+    .landing-gradient-bg::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        radial-gradient(circle at 20% 50%, rgba(16, 185, 129, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 40% 80%, rgba(139, 92, 246, 0.2) 0%, transparent 50%);
+      animation: gradient-shift 15s ease infinite;
+    }
+
+    @keyframes gradient-shift {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.8; }
+    }
+
+    .text-shadow-xl { 
+      text-shadow: 
+        0 0 10px rgba(16, 185, 129, 0.5),
+        0 0 20px rgba(16, 185, 129, 0.3),
+        0 0 40px rgba(16, 185, 129, 0.1);
+    }
+
+    /* Modern buttons */
+    .modern-btn {
+      position: relative;
+      overflow: hidden;
+      border-radius: 50px;
+      padding: 18px 36px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .modern-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      transition: left 0.6s;
+    }
+
+    .modern-btn:hover::before {
+      left: 100%;
+    }
+
+    .modern-btn:hover {
+      transform: translateY(-5px) scale(1.05);
+      box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #10b981, #059669, #047857);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(37, 99, 235, 0.8));
+      color: white;
+    }
+
+    .btn-input {
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: white;
+      font-size: 1rem;
+      padding: 12px 24px;
+    }
+
+    /* Advanced dashboard cards */
+    .dashboard-card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px) saturate(180%);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dashboard-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, currentColor, transparent);
+      opacity: 0.5;
+    }
+
+    .dashboard-card:hover { 
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 
+        0 20px 50px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    /* Enhanced sidebar */
+    .glassmorphism-sidebar {
+      background: rgba(10, 15, 28, 0.7);
+      backdrop-filter: blur(25px) saturate(200%);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      color: #ffffff;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Navigation improvements */
+    .nav-btn {
+      position: relative;
+      padding: 8px 16px;
+      border-radius: 25px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      backdrop-filter: blur(10px);
+    }
+
+    .nav-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .nav-btn::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 50%;
+      width: 0;
+      height: 2px;
+      background: linear-gradient(45deg, #10b981, #3b82f6);
+      transition: all 0.3s ease;
+      transform: translateX(-50%);
+    }
+
+    .nav-btn:hover::after {
+      width: 80%;
+    }
+
+    /* Logo enhancement */
+    .logo-enhanced {
+      background: linear-gradient(135deg, #ffffff, #10b981, #3b82f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      position: relative;
+    }
+
+    /* Alert enhancements */
+    .alert-card {
+      border-radius: 16px;
+      border-left-width: 6px;
+      box-shadow: 
+        0 10px 25px rgba(0, 0, 0, 0.1),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .alert-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, currentColor, transparent);
+      opacity: 0.3;
+    }
+
+    .alert-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Risk score enhancements */
+    .risk-badge {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(10px);
+    }
+
+    /* Loading animation */
+    .pulse-loader {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #10b981;
+      animation: pulse-dot 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+      0% { transform: scale(0.8); opacity: 0.5; }
+      50% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(0.8); opacity: 0.5; }
+    }
+
+    /* Input form styles */
+    .input-form {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 2rem;
+      max-width: 400px;
+      margin: 2rem auto;
+    }
+
+    .input-field {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      padding: 12px 16px;
+      color: white;
+      width: 100%;
+      margin-bottom: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: #10b981;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .input-field::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Responsive improvements */
+    @media (max-width: 768px) {
+      .modern-btn {
+        padding: 14px 28px;
+        font-size: 1rem;
+      }
+      
+      .glassmorphism-sidebar {
+        width: 90vw !important;
+        max-width: none !important;
+      }
+
+      .input-form {
+        margin: 1rem;
+        padding: 1.5rem;
+      }
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(135deg, #10b981, #3b82f6);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(135deg, #059669, #2563eb);
+    }
+  </style>
+</head>
+<body class="font-sans antialiased">
+
+<div id="app" class="flex flex-col h-screen">
+    <header class="glass-header p-4 flex justify-between items-center z-20 sticky top-0 h-[68px]">
+    <h1 class="text-3xl logo-enhanced tracking-tight">Pulse<span class="text-green-400">Net</span></h1>
+    <nav class="space-x-2">
+      <button id="homeBtn" class="nav-btn text-gray-300 hover:text-white font-medium">🏠 Home</button>
+      <button id="liveMapBtn" class="nav-btn text-gray-300 hover:text-green-400 font-medium">🌍 Live Map</button>
+      <button id="testBtn" class="nav-btn text-gray-300 hover:text-purple-400 font-medium">🧪 Test Model</button>
+      <button id="alertsBtn" class="nav-btn text-gray-300 hover:text-yellow-400 font-medium">⚠️ Alerts</button>
+    </nav>
+  </header>
+
+    <main class="relative flex-grow overflow-hidden">
+
+        <div id="landingPage" class="page-transition active absolute inset-0 flex flex-col items-center justify-center p-8 text-center text-white landing-gradient-bg">
+      <div class="animated-bg">
+        <div class="floating-orb orb1"></div>
+        <div class="floating-orb orb2"></div>
+        <div class="floating-orb orb3"></div>
+      </div>
+      
+      <div class="relative z-10">
+        <h2 class="text-6xl md:text-8xl font-black mb-8 text-shadow-xl leading-tight">
+          Pulse<span class="text-green-300">Net</span>
+        </h2>
+        <div class="w-24 h-1 bg-gradient-to-r from-green-400 to-blue-500 mx-auto mb-8 rounded-full"></div>
+        <p class="text-xl md:text-2xl text-gray-100 mb-16 max-w-3xl leading-relaxed opacity-90">
+          🌊 Empowering communities with <span class="text-green-300 font-semibold">real-time</span>, 
+          <span class="text-blue-300 font-semibold">AI-driven</span> flood intelligence. 
+          <br class="hidden md:block">Stay safe, stay informed, stay connected.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-6 justify-center">
+          <button id="landingLiveMapBtn" class="modern-btn btn-primary">
+            🌍 Explore Live Risk Map
+          </button>
+          <button id="landingTestBtn" class="modern-btn btn-input">
+            🧪 Test AI Model
+          </button>
+          <button id="landingAlertsBtn" class="modern-btn btn-secondary">
+            ⚠️ View Alerts & Guidance
+          </button>
+        </div>
+        
+        <div class="mt-16 flex justify-center space-x-8 opacity-70">
+          <div class="text-center">
+            <div class="text-2xl font-bold text-green-300">24/7</div>
+            <div class="text-sm">Monitoring</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-blue-300">AI</div>
+            <div class="text-sm">Powered</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-purple-300">Global</div>
+            <div class="text-sm">Coverage</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+        <div id="liveMapPage" class="page-transition hidden absolute inset-0">
+      <div id="map" class="absolute inset-0 z-0"></div>
+      <div class="absolute top-4 right-4 p-6 w-80 sm:w-96 z-10 glassmorphism-sidebar">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-2xl font-bold">🌊 Risk Overview</h3>
+          <div class="pulse-loader" style="display: none;"></div>
+        </div>
+        <div class="mb-4">
+          <select id="citySelector" class="input-field text-sm">
+            <option value="Bengaluru">Bengaluru, India</option>
+            <option value="Mumbai">Mumbai, India</option>
+            <option value="Chennai">Chennai, India</option>
+            <option value="Delhi">Delhi, India</option>
+            <option value="Kolkata">Kolkata, India</option>
+          </select>
+          <button id="refreshBtn" class="modern-btn btn-primary mt-2 w-full text-sm py-2">🔄 Refresh Data</button>
+        </div>
+        <div id="riskCards" class="space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto"></div>
+      </div>
+    </div>
+
+        <div id="testPage" class="page-transition hidden absolute inset-0 overflow-y-auto p-8" style="background: linear-gradient(135deg, #0a0f1c 0%, #1e293b 100%);">
+      <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-12">
+          <h2 class="text-5xl font-black mb-4 bg-gradient-to-r from-white via-purple-300 to-blue-300 bg-clip-text text-transparent">
+            🧪 Test AI Model
+          </h2>
+          <div class="w-32 h-1 bg-gradient-to-r from-purple-400 to-blue-500 mx-auto rounded-full"></div>
+          <p class="text-lg text-gray-300 mt-4">Enter weather parameters to test flood prediction</p>
+        </div>
+        
+        <div class="input-form">
+          <h3 class="text-2xl font-bold mb-6 text-center text-white">Weather Parameters</h3>
+          <div id="testError" class="hidden mb-4 p-4 bg-red-900/20 border border-red-500/30 rounded-lg text-red-200"></div>
+          <div id="testResult" class="hidden mb-4 p-4 rounded-lg"></div>
+          
+          <form id="testForm">
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-300 mb-2">Temperature (°C)</label>
+              <input type="number" step="0.1" id="temperature" class="input-field" placeholder="e.g., 28.5" required>
+            </div>
+            
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-300 mb-2">Rainfall (mm/hour)</label>
+              <input type="number" step="0.1" id="rainfall" class="input-field" placeholder="e.g., 15.2" required>
+            </div>
+            
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-gray-300 mb-2">Humidity (%)</label>
+              <input type="number" step="0.1" id="humidity" class="input-field" placeholder="e.g., 75.5" required>
+            </div>
+            
+            <button type="submit" id="testSubmit" class="modern-btn btn-input w-full">
+              🔮 Predict Flood Risk
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+        <div id="alertsPage" class="page-transition hidden absolute inset-0 overflow-y-auto p-8" style="background: linear-gradient(135deg, #0a0f1c 0%, #1e293b 100%);">
+      <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-12">
+          <h2 class="text-5xl font-black mb-4 bg-gradient-to-r from-white via-green-300 to-blue-300 bg-clip-text text-transparent">
+            ⚠️ Alerts & Guidance
+          </h2>
+          <div class="w-32 h-1 bg-gradient-to-r from-green-400 to-blue-500 mx-auto rounded-full"></div>
+        </div>
+        <div id="alertMessages" class="space-y-8"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const landingPage = document.getElementById('landingPage');
+  const liveMapPage = document.getElementById('liveMapPage');
+  const testPage = document.getElementById('testPage');
+  const alertsPage = document.getElementById('alertsPage');
+  const homeBtn = document.getElementById('homeBtn');
+  const liveMapBtn = document.getElementById('liveMapBtn');
+  const testBtn = document.getElementById('testBtn');
+  const alertsBtn = document.getElementById('alertsBtn');
+  const landingLiveMapBtn = document.getElementById('landingLiveMapBtn');
+  const landingTestBtn = document.getElementById('landingTestBtn');
+  const landingAlertsBtn = document.getElementById('landingAlertsBtn');
+  const riskCardsContainer = document.getElementById('riskCards');
+  const alertMessagesContainer = document.getElementById('alertMessages');
+  const pulseLoader = document.querySelector('.pulse-loader');
+  const citySelector = document.getElementById('citySelector');
+  const refreshBtn = document.getElementById('refreshBtn');
+  let map;
+
+  // IMPORTANT: Set your backend API base URL
+  const API_BASE_URL = 'http://127.0.0.1:8000'; // Make sure this matches your FastAPI server
+
+  // City coordinates for map centering
+  const cityCoordinates = {
+    'Bengaluru': [12.9716, 77.5946],
+    'Mumbai': [19.0760, 72.8777],
+    'Chennai': [13.0827, 80.2707],
+    'Delhi': [28.7041, 77.1025],
+    'Kolkata': [22.5726, 88.3639]
+  };
+
+  const COLORS = { green:'#10b981', yellow:'#f59e0b', red:'#ef4444' };
+
+  function showPage(pageId){
+    [landingPage, liveMapPage, testPage, alertsPage].forEach(p=>{
+      p.classList.add("hidden");
+      p.classList.remove("active");
+    });
+    const page=document.getElementById(pageId);
+    page.classList.remove("hidden");
+    setTimeout(()=>page.classList.add("active"),100);
+
+    if(pageId==='liveMapPage'){
+      if(!map) initializeMap();
+      setTimeout(()=>{
+        map.invalidateSize();
+        fetchAndDisplayRiskData();
+      },300);
+    }
+    if(pageId==='alertsPage'){ displayAlerts(); }
+  }
+
+  homeBtn.onclick=()=>showPage('landingPage');
+  liveMapBtn.onclick=()=>showPage('liveMapPage');
+  testBtn.onclick=()=>showPage('testPage');
+  alertsBtn.onclick=()=>showPage('alertsPage');
+  landingLiveMapBtn.onclick=()=>showPage('liveMapPage');
+  landingTestBtn.onclick=()=>showPage('testPage');
+  landingAlertsBtn.onclick=()=>showPage('alertsPage');
+
+  function initializeMap(){
+    if(map) map.remove();
+    const selectedCity = citySelector.value;
+    const coords = cityCoordinates[selectedCity] || cityCoordinates['Bengaluru'];
+    map=L.map('map').setView(coords, 11);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+      { attribution:'&copy; CartoDB &copy; OpenStreetMap', subdomains: 'abcd' }).addTo(map);
+  }
+
+  // NEW: Updated functions to handle the string predictions from the backend
+  function getRiskColor(prediction){
+    if (prediction === 'heatwave' || prediction === 'flood') {
+      return COLORS.red; // Use red for severe warnings
+    } else {
+      return COLORS.green; // Use green for normal conditions
+    }
+  }
+
+  function getRiskText(prediction){
+    if (prediction === 'heatwave') {
+      return 'Heatwave Warning';
+    } else if (prediction === 'flood') {
+      return 'Flood Warning';
+    } else {
+      return 'Normal Conditions';
+    }
+  }
+  
+  function getRiskScore(prediction){
+    if (prediction === 'heatwave') return 90;
+    if (prediction === 'flood') return 95;
+    return 15;
+  }
+
+  function getTrendIcon(trend){
+    return trend==='rising'?'📈':(trend==='falling'?'📉':'➡️');
+  }
+
+  function displayRiskCards(data){
+    riskCardsContainer.innerHTML='';
+    
+    // Handle error cases
+    if (!data || data.error) {
+        riskCardsContainer.innerHTML = `<div class="p-4 text-red-400">Error: ${data?.error || 'Could not load risk data'}</div>`;
+        return;
+    }
+
+    // Extract data from the single city response
+    const weather = data.weather;
+    const prediction = data.prediction;
+    const city = data.city;
+    
+    // Calculate risk indicators
+    const riskScore = getRiskScore(prediction);
+    const riskColor = getRiskColor(prediction);
+    const riskText = getRiskText(prediction);
+    const trend = prediction !== 'normal' ? 'rising' : 'stable';
+    const trendIcon = getTrendIcon(trend);
+
+    // Create single card for the city
+    const card = document.createElement('div');
+    card.className = `dashboard-card p-5 ${prediction !== 'normal' ? 'glowing-red':''}`;
+    card.style.borderLeftColor = riskColor;
+    card.innerHTML = `
+      <div class="flex justify-between items-start mb-3">
+        <div>
+          <h4 class="font-bold text-white text-lg">${city}</h4>
+          <div class="flex items-center mt-1 space-x-2">
+            <span class="risk-badge" style="background: ${riskColor}20; color: ${riskColor}; border: 1px solid ${riskColor}40;">
+              ${riskText}
+            </span>
+            <span class="text-sm opacity-70">${trendIcon} ${trend}</span>
+          </div>
+        </div>
+      </div>
+      <div class="space-y-2 text-sm text-gray-300">
+        <div class="flex justify-between">
+          <span>🌡️ Temp:</span>
+          <span class="font-semibold text-orange-300">${weather.meantemp.toFixed(1)}°C</span>
+        </div>
+        <div class="flex justify-between">
+          <span>💧 Humidity:</span>
+          <span class="font-semibold text-cyan-300">${weather.humidity.toFixed(0)}%</span>
+        </div>
+        <div class="flex justify-between">
+          <span>💨 Wind:</span>
+          <span class="font-semibold text-purple-300">${weather.wind_speed.toFixed(1)} km/h</span>
+        </div>
+        <div class="flex justify-between">
+          <span>Mean Pressure:</span>
+          <span class="font-semibold text-indigo-300">${weather.meanpressure.toFixed(1)} hPa</span>
+        </div>
+        <div class="flex justify-between">
+          <span>🌧️ Rainfall (1h):</span>
+          <span class="font-semibold text-blue-300">${weather.rainfall.toFixed(1)}mm</span>
+        </div>
+        <div class="flex justify-between pt-2 border-t border-gray-600">
+          <span>⚡ Flood Risk:</span>
+          <span class="font-bold text-lg" style="color:${riskColor}">${riskText}</span>
+        </div>
+        <div class="text-xs opacity-60 pt-2">
+          Last updated: ${new Date().toLocaleTimeString()}
+        </div>
+      </div>
+    `;
+    
+    // Add the single card to container
+    riskCardsContainer.appendChild(card);
+  }
+
+  function addMarkersToMap(data){
+    // Clear existing markers
+    map.eachLayer(l=>{
+      if(l instanceof L.CircleMarker||l instanceof L.Marker) map.removeLayer(l);
+    });
+
+    if (!data || data.error) return;
+
+    const weather = data.weather;
+    const prediction = data.prediction;
+    const city = data.city;
+    const coords = cityCoordinates[city] || cityCoordinates['Bengaluru'];
+    
+    const riskColor = getRiskColor(prediction);
+    const riskText = getRiskText(prediction);
+    const riskScore = getRiskScore(prediction);
+    
+    const circle=L.circleMarker(coords,{
+      color:'#ffffff',
+      fillColor:riskColor,
+      fillOpacity:0.8,
+      radius:12+(riskScore/10),
+      weight:3,
+      className: prediction !== 'normal' ? 'glowing-marker' : ''
+    }).addTo(map);
+    
+    circle.bindPopup(`
+      <div style="color: #333; font-family: Inter, sans-serif;">
+        <h3 style="margin: 0 0 10px 0; color: ${riskColor}; font-weight: bold;">
+          ${city}
+        </h3>
+        <div style="display: grid; gap: 5px;">
+          <div>🌡️ Temp: <strong>${weather.meantemp.toFixed(1)}°C</strong></div>
+          <div>💧 Humidity: <strong>${weather.humidity.toFixed(0)}%</strong></div>
+          <div>💨 Wind: <strong>${weather.wind_speed.toFixed(1)} km/h</strong></div>
+          <div>Mean Pressure: <strong>${weather.meanpressure.toFixed(1)} hPa</strong></div>
+          <div>🌧️ Rainfall (1h): <strong>${weather.rainfall.toFixed(1)}mm</strong></div>
+          <div>⚡ Prediction: <strong style="color: ${riskColor}">${riskText}</strong></div>
+        </div>
+      </div>
+    `);
+    
+    // Center map on the city
+    map.setView(coords, 11);
+  }
+
+  async function fetchAndDisplayRiskData(){
+    const selectedCity = citySelector.value;
+    pulseLoader.style.display = 'inline-block';
+    riskCardsContainer.innerHTML = `<div class="p-4 text-center text-gray-400">Fetching live data for ${selectedCity}...</div>`;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/predict-live?city=${selectedCity}`);
+        const data = await response.json();
+
+        if (response.ok && !data.error) {
+            displayRiskCards(data);
+            addMarkersToMap(data);
+        } else {
+            riskCardsContainer.innerHTML = `<div class="p-4 text-red-400">Error: ${data.error || 'Failed to fetch data'}</div>`;
+            console.error('Error fetching live data:', data);
+        }
+    } catch (error) {
+        riskCardsContainer.innerHTML = `<div class="p-4 text-red-400">Network error: ${error.message}<br><small>Make sure the backend server is running on ${API_BASE_URL}</small></div>`;
+        console.error('Network or parsing error:', error);
+    } finally {
+        pulseLoader.style.display = 'none';
+    }
+  }
+
+  // Event listeners for city selector and refresh button
+  citySelector.addEventListener('change', () => {
+    if (map) {
+      const coords = cityCoordinates[citySelector.value] || cityCoordinates['Bengaluru'];
+      map.setView(coords, 11);
+      fetchAndDisplayRiskData();
+    }
+  });
+
+  refreshBtn.addEventListener('click', fetchAndDisplayRiskData);
+
+  // Test Model Form Handler
+  document.getElementById('testForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const submitBtn = document.getElementById('testSubmit');
+    const errorDiv = document.getElementById('testError');
+    const resultDiv = document.getElementById('testResult');
+    
+    // Show loading state
+    submitBtn.innerHTML = '🔮 Processing...';
+    submitBtn.disabled = true;
+    
+    try {
+      // Get form values and prepare data object for API
+      const weatherData = {
+        // NEW: Get all five required features
+        meantemp: parseFloat(document.getElementById('meantemp').value),
+        humidity: parseFloat(document.getElementById('humidity').value),
+        wind_speed: parseFloat(document.getElementById('wind_speed').value),
+        meanpressure: parseFloat(document.getElementById('meanpressure').value),
+        rainfall: parseFloat(document.getElementById('rainfall').value),
+      };
+      
+      // Hide previous results
+      errorDiv.classList.add('hidden');
+      resultDiv.classList.add('hidden');
+      
+      const response = await fetch(`${API_BASE_URL}/predict`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(weatherData)
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && !data.error) {
+        const prediction = data.prediction;
+        const riskColor = getRiskColor(prediction);
+        const riskText = getRiskText(prediction);
+        
+        resultDiv.innerHTML = `
+          <div class="text-center">
+            <div class="text-4xl mb-4">${prediction === 'normal' ? '✅' : '🚨'}</div>
+            <h3 class="text-2xl font-bold mb-2" style="color: ${riskColor}">
+              ${riskText}
+            </h3>
+            <p class="text-gray-300 mb-4">
+              ${prediction !== 'normal'
+                ? `The AI model predicts a high probability of a ${prediction} based on the provided weather conditions.`
+                : 'The AI model indicates normal conditions based on the provided weather conditions.'}
+            </p>
+            <div class="grid grid-cols-3 gap-4 text-sm">
+              <div class="text-center">
+                <div class="text-orange-300 font-bold">${weatherData.meantemp}°C</div>
+                <div class="text-gray-400">Temp</div>
+              </div>
+              <div class="text-center">
+                <div class="text-blue-300 font-bold">${weatherData.rainfall}mm</div>
+                <div class="text-gray-400">Rainfall</div>
+              </div>
+              <div class="text-center">
+                <div class="text-cyan-300 font-bold">${weatherData.humidity}%</div>
+                <div class="text-gray-400">Humidity</div>
+              </div>
+            </div>
+          </div>
+        `;
+        resultDiv.className = `p-6 rounded-lg mb-4 ${prediction !== 'normal'
+          ? 'bg-red-900/20 border border-red-500/30'
+          : 'bg-green-900/20 border border-green-500/30'}`;
+        resultDiv.classList.remove('hidden');
+      } else {
+        errorDiv.innerHTML = `Failed to get prediction: ${data.error || 'Unknown error'}`;
+        errorDiv.classList.remove('hidden');
+      }
+    } catch (error) {
+      errorDiv.innerHTML = `Network error: ${error.message}. Make sure the backend server is running.`;
+      errorDiv.classList.remove('hidden');
+    } finally {
+      submitBtn.innerHTML = '🔮 Predict Flood Risk';
+      submitBtn.disabled = false;
+    }
+  });
+
+  function displayAlerts(){
+    alertMessagesContainer.innerHTML='';
+    const alerts=[
+      {
+        risk:'Critical Risk',
+        icon:'🚨',
+        msg:'Immediate evacuation required for low-lying areas. Emergency services are on standby. Follow local authorities\' guidance immediately.',
+        bgClass:'bg-gradient-to-r from-red-900/20 to-red-800/20',
+        borderClass:'border-red-500',
+        textClass:'text-red-200'
+      },
+      {
+        risk:'Moderate Risk',
+        icon:'⚠️',
+        msg:'Elevated flood risk detected in several regions. Monitor weather updates closely and prepare emergency supplies. Stay vigilant.',
+        bgClass:'bg-gradient-to-r from-yellow-900/20 to-orange-800/20',
+        borderClass:'border-yellow-500',
+        textClass:'text-yellow-200'
+      },
+      {
+        risk:'Low Risk',
+        icon:'✅',
+        msg:'Current conditions are stable across monitored regions. Continue routine monitoring and stay informed of weather changes.',
+        bgClass:'bg-gradient-to-r from-green-900/20 to-emerald-800/20',
+        borderClass:'border-green-500',
+        textClass:'text-green-200'
+      }
+    ];
+    
+    alerts.forEach(a=>{
+      const div=document.createElement('div');
+      div.className=`alert-card p-8 ${a.bgClass} ${a.borderClass} ${a.textClass}`;
+      div.innerHTML=`
+        <div class="flex items-start space-x-4">
+          <div class="text-4xl">${a.icon}</div>
+          <div class="flex-1">
+            <h3 class="font-bold text-2xl mb-3 text-white">${a.risk}</h3>
+            <p class="text-lg leading-relaxed opacity-90">${a.msg}</p>
+            <div class="mt-4 flex items-center space-x-4 text-sm opacity-75">
+              <span>📅 Updated: ${new Date().toLocaleTimeString()}</span>
+              <span>🎯 Priority: ${a.risk.split(' ')[0]}</span>
+            </div>
+          </div>
+        </div>
+      `;
+      alertMessagesContainer.appendChild(div);
+    });
+    
+    // Add emergency contacts section
+    const contactsDiv = document.createElement('div');
+    contactsDiv.className = 'alert-card p-8 bg-gradient-to-r from-blue-900/20 to-indigo-800/20 border-blue-500 text-blue-200 mt-8';
+    contactsDiv.innerHTML = `
+      <div class="text-center">
+        <h3 class="font-bold text-2xl mb-4 text-white">📞 Emergency Contacts</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-lg">
+          <div class="p-4 rounded-lg bg-red-900/30 border border-red-500/30">
+            <div class="text-2xl mb-2">🚨</div>
+            <div class="font-bold">Emergency Services</div>
+            <div class="text-xl font-mono">112</div>
+          </div>
+          <div class="p-4 rounded-lg bg-blue-900/30 border border-blue-500/30">
+            <div class="text-2xl mb-2">🌊</div>
+            <div class="font-bold">Disaster Management</div>
+            <div class="text-xl font-mono">1078</div>
+          </div>
+          <div class="p-4 rounded-lg bg-green-900/30 border border-green-500/30">
+            <div class="text-2xl mb-2">ℹ️</div>
+            <div class="font-bold">Weather Helpline</div>
+            <div class="text-xl font-mono">1588</div>
+          </div>
+        </div>
+      </div>
+    `;
+    alertMessagesContainer.appendChild(contactsDiv);
+  }
+
+  // Initialize with landing page
+  showPage('landingPage');
+  
+  // Add some interactive enhancements
+  document.addEventListener('mousemove', (e) => {
+    const orbs = document.querySelectorAll('.floating-orb');
+    orbs.forEach((orb, index) => {
+      const speed = (index + 1) * 0.0005;
+      const x = (e.clientX * speed);
+      const y = (e.clientY * speed);
+      orb.style.transform += ` translate(${x}px, ${y}px)`;
+    });
+  });
+});
+</script>
+</body>
+</html>
